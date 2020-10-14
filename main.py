@@ -41,6 +41,36 @@ class OdoGHClient(object):
     resp = self.client.execute(query)
     return resp["repository"]["projects"]["nodes"]
   
+  def get_recent_pr_merges(self):
+    pass
+
+  def get_all_open_prs(self):
+    query = gql(t(
+      '''
+      query { 
+        repository(name:"$name",owner:"$owner") {
+          pullRequests(orderBy:{field: CREATED_AT, direction: ASC}, first:100, states:OPEN) {
+            nodes{
+              title
+              changedFiles
+              additions
+              deletions
+              labels(first: 10) {
+                edges {
+                  node {
+                    name
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ''', name=self.name, owner=self.owner))
+    resp = self.client.execute(query)
+    return resp["repository"]["pullRequests"]["nodes"]
+    
+
   def get_project_columns(self, project_number):
     query = gql(t(
       '''
@@ -58,7 +88,6 @@ class OdoGHClient(object):
       }
     ''',name=self.name, owner=self.owner, project_number=project_number))
     resp = self.client.execute(query)
-    print(resp)
     return resp["repository"]["project"]["columns"]["nodes"]
 
   def get_all_column_and_issue_ids(self, project_number):
@@ -85,22 +114,29 @@ class OdoGHClient(object):
           }
         }
       }
-      '''
-    ),name=self.name, owner=self.owner, project_number=project_number)
+      ''',
+    name=self.name, owner=self.owner, project_number=project_number))
 
     resp = self.client.execute(query)
-    return resp["repository"]["project"]["column"]["nodes"]
+    return resp["repository"]["project"]["columns"]["nodes"]
 
   def _set_old_new_project(self):
     projects = self.get_last_two_project_details()
     self.old_project = projects[0]
     self.new_project = projects[1]
 
+  def set_project_for_issue(self, issue_id, project_number):
+    pass
+
+  def set_column_for_issue(self, issue_id, column_id):
+    pass
+
   def build_column_mapping(self):
     if self.column_mapping == None:
       old_columns = self.get_project_columns(self.old_project["number"])
       new_columns = self.get_project_columns(self.new_project["number"])
-
+      print()
+      print(self.old_project["number"]) 
 
 c = OdoGHClient()
-c.get_last_two_project_details()
+print(c.get_all_column_and_issue_ids(c.old_project["number"]))
